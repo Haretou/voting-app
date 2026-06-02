@@ -1,0 +1,25 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PWD:-votingpassword}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PWD:-votingpassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  voting-app:
+    build: .
+    container_name: voting-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - REDIS=redis
+      - REDIS_PWD=${REDIS_PWD:-votingpassword}
+    depends_on:
+      redis:
+        condition: service_healthy
